@@ -1,4 +1,5 @@
-# Remote deployment stack (staging & production).
+# Remote deployment stack (staging & production). Postgres is required —
+# there is no SQLite option for deployed environments.
 #
 # This file is rsynced to the server by the CI deploy step alongside a
 # generated `.env`. Unlike the root docker-compose.yml (which builds images

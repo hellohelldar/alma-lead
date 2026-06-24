@@ -36,7 +36,9 @@ for releases), a moving channel tag (`staging` / `production`), and a
 
 ## On the server
 
-Each environment is an isolated Compose project in its own directory:
+Each environment is an isolated Compose project in its own directory. Both
+**staging and production always run Postgres** — the deploy stack has no SQLite
+option; `DATABASE_URL` is always `postgresql+asyncpg://…`.
 
 | Environment | Compose project | Directory |
 |-------------|-----------------|-----------|

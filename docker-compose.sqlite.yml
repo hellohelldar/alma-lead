@@ -1,0 +1,43 @@
+# Optional LOCAL Docker stack — SQLite only (no Postgres container).
+# Not used for staging, production, or CI. For a quick smoke test when you
+# don't want to run Postgres locally.
+#
+#   docker compose -f docker-compose.sqlite.yml up --build
+#
+# Default local Docker (Postgres, production-like):
+#   docker compose up --build
+#
+# Web → http://localhost:3000   API → http://localhost:8000/docs
+
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:////data/alma.db
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      ATTORNEY_EMAIL: ${ATTORNEY_EMAIL:-attorney@alma.com}
+      ATTORNEY_PASSWORD: ${ATTORNEY_PASSWORD:-changeme}
+      ATTORNEY_NAME: ${ATTORNEY_NAME:-Alma Attorney}
+      ATTORNEY_NOTIFY_EMAIL: ${ATTORNEY_NOTIFY_EMAIL:-attorney@alma.com}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Alma <onboarding@resend.dev>}
+      STORAGE_DIR: /data/uploads
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "8000:8000"
+    volumes:
+      - alma_data:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  alma_data:

@@ -14,10 +14,13 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) for the system design and trade-offs, and
 
 ```
 alma-lead/
-├── backend/     FastAPI service (app/, alembic/, tests/)
-├── frontend/    Next.js app (app/, components/, lib/)
-├── docs/        DESIGN.md, AGENTS.md, openapi.json
-└── docker-compose.yml
+├── backend/                  FastAPI service (app/, alembic/, tests/)
+├── frontend/                 Next.js app (app/, components/, lib/)
+├── deploy/                   staging/production Compose + Caddy (Postgres only)
+├── docker-compose.yml        local Docker — Postgres (default)
+├── docker-compose.sqlite.yml local Docker — SQLite (optional)
+├── docs/                     DESIGN.md, AGENTS.md, openapi.json
+└── scripts/smoke.sh          full-stack smoke test
 ```
 
 ---
@@ -60,20 +63,46 @@ npm run dev
 
 ---
 
-## Option B — Run with Docker Compose (Postgres)
+## Option B — Run with Docker Compose
 
-Brings up Postgres + the API + the web app together (production-like):
+**Database policy:** staging, production, and CI always use **Postgres**
+(`deploy/docker-compose.yml` and the default `docker-compose.yml`). For local
+Docker you can optionally use **SQLite** instead when you don't need a DB
+container.
+
+### Default — Postgres (matches staging/production)
 
 ```bash
 docker compose up --build
 ```
 
+Brings up Postgres + the API + the web app. Credentials are preconfigured in
+`docker-compose.yml` (override via a root `.env` — see `.env.example`):
+
+| Setting | Value |
+|---------|-------|
+| Host (from backend container) | `db` |
+| Host (from your machine) | `localhost:5432` |
+| User / DB | `alma` / `alma` |
+| Password | `alma` (override: `POSTGRES_PASSWORD=...`) |
+| `DATABASE_URL` (backend) | `postgresql+asyncpg://alma:<password>@db:5432/alma` |
+
 - Web app → http://localhost:3000
 - API → http://localhost:8000/docs
 
 Override secrets/credentials via environment or a root `.env` consumed by Compose
-(`JWT_SECRET`, `ATTORNEY_PASSWORD`, `RESEND_API_KEY`, …). The backend runs `alembic upgrade head`
-on startup.
+(`POSTGRES_PASSWORD`, `JWT_SECRET`, `ATTORNEY_PASSWORD`, `RESEND_API_KEY`, …).
+The backend runs `alembic upgrade head` on startup.
+
+### Optional — SQLite (local only)
+
+```bash
+docker compose -f docker-compose.sqlite.yml up --build
+```
+
+Uses a SQLite file in a Docker volume (`/data/alma.db`). Handy for a quick
+full-stack test without running Postgres. **Do not use this for staging or
+production.**
 
 ---
 
@@ -114,10 +143,11 @@ The app talks to its database through async SQLAlchemy and a single
 
 | Context | `DATABASE_URL` | Notes |
 |---------|----------------|-------|
-| Local dev (default) | `sqlite+aiosqlite:///./alma.db` | Zero setup; file-based. |
+| Local dev (no Docker) | `sqlite+aiosqlite:///./alma.db` | Zero setup; file-based. |
 | Local Postgres | `postgresql+asyncpg://alma:alma@localhost:5432/alma` | Run any Postgres; then `alembic upgrade head`. |
-| Docker Compose | `postgresql+asyncpg://alma:alma@db:5432/alma` | Set automatically in `docker-compose.yml`. |
-| Staging / production | from `STAGING_`/`PRODUCTION_` secrets | The deploy stack ([`deploy/`](deploy/)) runs Postgres; the URL is built from `POSTGRES_PASSWORD`. |
+| Docker Compose (default) | `postgresql+asyncpg://alma:<password>@db:5432/alma` | `docker compose up`; password from `POSTGRES_PASSWORD` (default `alma`). |
+| Docker Compose (optional) | `sqlite+aiosqlite:////data/alma.db` | `docker compose -f docker-compose.sqlite.yml up`; local only. |
+| Staging / production | Postgres (required) | [`deploy/docker-compose.yml`](deploy/docker-compose.yml); URL built from `POSTGRES_PASSWORD`. |
 
 **Use the `asyncpg` driver** for Postgres (`postgresql+asyncpg://…`) — the engine
 is async. To point a local dev server at Postgres:

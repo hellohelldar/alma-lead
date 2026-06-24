@@ -1,7 +1,10 @@
-# Full production-like stack: Postgres + FastAPI + Next.js.
-# Local dev without Docker can skip this entirely (SQLite default) — see README.
+# Default local Docker stack — Postgres + FastAPI + Next.js.
+# Matches staging/production (deploy/docker-compose.yml always uses Postgres).
 #
 #   docker compose up --build
+#
+# Optional lighter stack (SQLite, no db container):
+#   docker compose -f docker-compose.sqlite.yml up --build
 #
 # Frontend → http://localhost:3000   API → http://localhost:8000/docs
 
@@ -10,7 +13,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: alma
-      POSTGRES_PASSWORD: alma
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-alma}
       POSTGRES_DB: alma
     ports:
       - "5432:5432"
@@ -26,7 +29,7 @@ services:
     build:
       context: ./backend
     environment:
-      DATABASE_URL: postgresql+asyncpg://alma:alma@db:5432/alma
+      DATABASE_URL: postgresql+asyncpg://alma:${POSTGRES_PASSWORD:-alma}@db:5432/alma
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
       ATTORNEY_EMAIL: ${ATTORNEY_EMAIL:-attorney@alma.com}
       ATTORNEY_PASSWORD: ${ATTORNEY_PASSWORD:-changeme}
@@ -36,7 +39,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-Alma <onboarding@resend.dev>}
       STORAGE_DIR: /data/uploads
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: '["http://localhost:3000"]'
     ports:
       - "8000:8000"
     volumes:
