@@ -6,6 +6,41 @@ _How this project was built with coding agents. Attribution per file is in [`NOT
 
 - **Claude Code (Opus 4.8)** as the primary driver — architecture, the backend backbone, integration, verification, and orchestration of sub-agents.
 - **Claude Code sub-agents** (the `Agent` tool) — three were spawned in parallel for independent, well-scoped slices of work, each confined to a non-overlapping directory so they could not conflict.
+- **Cursor Agent (Composer)** — a follow-up session after the initial build, for hands-on verification, onboarding Q&A, and small infra/doc changes (see below).
+
+## Follow-up — Cursor Agent (Composer)
+
+After the repo was feature-complete, I switched to **Cursor** (Agent mode, **Composer** model) for a second pass. Claude Code had already shipped the app; I didn't need more greenfield architecture — I needed someone embedded in the IDE who could **run** the stack, answer questions while I read the code, and land small cross-cutting tweaks without reopening the original Claude session.
+
+**Why Composer instead of Claude Code here:**
+
+| Need | Why Composer fit |
+|------|------------------|
+| "Start it and let me click around" | Full terminal + repo access in Cursor; can spawn/restart `uvicorn`, `npm run dev`, and Docker in the background while I test in the browser. |
+| "What is Alembic / SQLAlchemy / schemas vs models?" | Exploratory Q&A against the open files — no delegation setup, just chat while navigating `backend/`. |
+| Docker smoke test + policy docs | Incremental edits to `docker-compose.yml`, README, deploy notes, then `docker compose up` + `scripts/smoke.sh` in one loop. |
+| Commit + push | Git workflow in the same session once the diff looked right. |
+
+**What Composer did in that session:**
+
+| Area | Author | Why |
+|------|--------|-----|
+| Local dev bootstrap — venv, `alembic upgrade head`, run backend + frontend, API smoke (health, login, lead CRUD) | **Cursor (Composer)** | Operational verification before manual UI testing; caught `CORS_ORIGINS` JSON format in copied `.env`. |
+| Conceptual onboarding (Alembic, SQLAlchemy, Pydantic schemas, Django ORM analogies) | **Cursor (Composer)** | Reading-comprehension pass — no code changes, just mapping the stack to things I already know. |
+| `docker-compose.sqlite.yml`, Postgres-as-default docs, root `.env.example`, `CORS_ORIGINS` fix in default compose | **Cursor (Composer)** | Clarify DB policy: Postgres for staging/prod/CI/default Docker; SQLite optional for local Docker only. Ran SQLite stack + full smoke test, then committed and pushed. |
+| Process hygiene — restart/kill dev servers when background tasks died | **Cursor (Composer)** | Keeps the "test it yourself" loop unblocked without me hunting PIDs. |
+
+Composer did **not** rewrite the API, frontend, or CI pipelines — those stayed Claude Code's work. This session was complementary: **run, explain, polish, ship.**
+
+**Representative prompts (excerpts):**
+
+> check the full project and start it and test it … so that I can test it manually
+
+> what is alembic / why we use alchemy / difference between schemas and lead?
+
+> let's test the docker … make postgres default for staging and prod but for local docker u can choose sqlite
+
+> commit to the main … push
 
 ## What I delegated vs. wrote myself, and why
 
