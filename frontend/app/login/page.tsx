@@ -47,23 +47,20 @@ export default function LoginPage() {
     <div className="flex min-h-full flex-1 items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-base font-bold text-white">
-              A
-            </span>
-            <span className="text-xl font-semibold tracking-tight text-slate-900">
-              Alma
+          <Link href="/" className="inline-flex items-center">
+            <span className="text-2xl font-bold lowercase tracking-tight text-forest">
+              alma
             </span>
           </Link>
-          <h1 className="mt-6 text-2xl font-semibold text-slate-900">
+          <h1 className="mt-6 text-2xl font-semibold text-ink">
             Attorney sign in
           </h1>
-          <p className="mt-1.5 text-sm text-slate-500">
+          <p className="mt-1.5 text-sm text-muted">
             Access the internal lead console.
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-line">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {error && <Alert tone="error">{error}</Alert>}
 
@@ -93,8 +90,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
-          <Link href="/" className="font-medium text-indigo-600 hover:text-indigo-700">
+        <p className="mt-6 text-center text-sm text-muted">
+          <Link href="/" className="font-medium text-leaf hover:text-forest">
             ← Back to the intake form
           </Link>
         </p>

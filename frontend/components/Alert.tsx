@@ -5,8 +5,8 @@ type Tone = "error" | "success" | "info";
 
 const tones: Record<Tone, string> = {
   error: "bg-red-50 text-red-800 ring-red-200",
-  success: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  info: "bg-indigo-50 text-indigo-800 ring-indigo-200",
+  success: "bg-sage-soft text-forest ring-sage",
+  info: "bg-sage-soft text-forest ring-sage",
 };
 
 export default function Alert({
@@ -22,7 +22,7 @@ export default function Alert({
     <div
       role={tone === "error" ? "alert" : "status"}
       className={cn(
-        "rounded-lg px-4 py-3 text-sm ring-1 ring-inset",
+        "rounded-xl px-4 py-3 text-sm ring-1 ring-inset",
         tones[tone],
         className,
       )}

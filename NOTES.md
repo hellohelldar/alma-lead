@@ -32,6 +32,10 @@ Authored and verified directly; the API contract and integration glue.
 - `scripts/smoke.sh` — end-to-end smoke test (CI + post-deploy)
 - the `CORS_ORIGINS` `NoDecode` config fix (found via the smoke test — see
   `docs/AGENTS.md`)
+- frontend rebrand to Alma's visual identity (cream + forest/sage palette,
+  Poppins, pill buttons, peach/forest status chips) — theme tokens in
+  `app/globals.css`, applied across components and all three pages; verified
+  visually against tryalma.com via browser screenshots
 
 ## Delegated to sub-agents
 

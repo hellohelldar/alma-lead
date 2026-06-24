@@ -1,7 +1,22 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+/* Alma brand tokens (tryalma.com): warm cream canvas, forest + sage greens,
+   friendly rounded geometric type. Exposed as Tailwind color/font utilities. */
+@theme {
+  --color-cream: #fbf3e8; /* page canvas */
+  --color-cream-header: #fdf6ec; /* slightly lighter header/footer */
+  --color-sage: #d8ebb2; /* hero / accent panels */
+  --color-sage-soft: #eaf3d9; /* subtle green tint */
+  --color-forest: #1b4d3c; /* primary: buttons, logo, dark accents */
+  --color-forest-dark: #143d2e; /* primary hover */
+  --color-leaf: #2c7a50; /* secondary green: eyebrows, links */
+  --color-ink: #181b18; /* headlines */
+  --color-muted: #5a6560; /* body text */
+  --color-line: #ece5d8; /* hairline borders on cream/white */
+  --color-pending: #f8e2b8; /* PENDING badge fill (peach) */
+  --color-pending-ink: #8a5a1a; /* PENDING badge text */
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -9,7 +24,7 @@ html {
 }
 
 body {
-  background-color: #f8fafc; /* slate-50 */
-  color: #0f172a; /* slate-900 */
+  background-color: var(--color-cream);
+  color: var(--color-ink);
   font-family: var(--font-sans);
 }

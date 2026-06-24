@@ -1,14 +1,18 @@
 import { cn } from "@/lib/utils";
 import type { LeadState } from "@/lib/types";
 
-const styles: Record<LeadState, { label: string; className: string }> = {
+// Mirrors Alma's status pills: a soft peach "in progress" chip and a solid
+// forest-green "done" chip.
+const styles: Record<LeadState, { label: string; className: string; dot: string }> = {
   PENDING: {
     label: "Pending",
-    className: "bg-amber-50 text-amber-700 ring-amber-200",
+    className: "bg-pending text-pending-ink",
+    dot: "bg-pending-ink",
   },
   REACHED_OUT: {
     label: "Reached out",
-    className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    className: "bg-forest text-white",
+    dot: "bg-sage",
   },
 };
 
@@ -17,11 +21,11 @@ export default function Badge({ state }: { state: LeadState }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
         s.className,
       )}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+      <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} aria-hidden />
       {s.label}
     </span>
   );

@@ -158,7 +158,7 @@ export default function LeadsPage() {
   if (authReady !== true) {
     return (
       <div className="flex min-h-full flex-1 items-center justify-center">
-        <span className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-forest" />
       </div>
     );
   }
@@ -170,24 +170,21 @@ export default function LeadsPage() {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-line bg-cream-header">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              A
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-bold lowercase tracking-tight text-forest">
+              alma
             </span>
-            <span className="text-lg font-semibold tracking-tight text-slate-900">
-              Alma
-            </span>
-            <span className="ml-2 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+            <span className="rounded-full bg-sage-soft px-2.5 py-0.5 text-xs font-medium text-leaf">
               Lead console
             </span>
           </div>
           <div className="flex items-center gap-4">
             {user && (
-              <span className="hidden text-sm text-slate-600 sm:inline">
+              <span className="hidden text-sm text-muted sm:inline">
                 Signed in as{" "}
-                <span className="font-medium text-slate-900">{user.name}</span>
+                <span className="font-medium text-ink">{user.name}</span>
               </span>
             )}
             <Button variant="secondary" size="sm" onClick={handleLogout}>
@@ -199,15 +196,15 @@ export default function LeadsPage() {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Leads</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold text-ink">Leads</h1>
+          <p className="mt-1 text-sm text-muted">
             Prospects who submitted the intake form.
           </p>
         </div>
 
         {/* Controls */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex rounded-lg bg-slate-100 p-1">
+          <div className="inline-flex rounded-full bg-white p-1 ring-1 ring-line">
             {FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -217,10 +214,10 @@ export default function LeadsPage() {
                   setOffset(0);
                 }}
                 className={
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors " +
+                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors " +
                   (filter === f.value
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700")
+                    ? "bg-forest text-white"
+                    : "text-muted hover:text-forest")
                 }
               >
                 {f.label}
@@ -248,10 +245,10 @@ export default function LeadsPage() {
         )}
 
         {/* Table */}
-        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-line">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+            <table className="min-w-full divide-y divide-line">
+              <thead className="bg-sage-soft">
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
@@ -260,32 +257,32 @@ export default function LeadsPage() {
                   <Th className="text-right">Actions</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-16 text-center">
-                      <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
+                      <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-line border-t-forest" />
                     </td>
                   </tr>
                 ) : leads.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
-                      className="px-6 py-16 text-center text-sm text-slate-500"
+                      className="px-6 py-16 text-center text-sm text-muted"
                     >
                       No leads match your filters yet.
                     </td>
                   </tr>
                 ) : (
                   leads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50/60">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                    <tr key={lead.id} className="hover:bg-sage-soft/40">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-ink">
                         {fullName(lead)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted">
                         {lead.email}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted">
                         {formatDate(lead.created_at)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
@@ -322,7 +319,7 @@ export default function LeadsPage() {
 
         {/* Pagination */}
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             {total === 0
               ? "No results"
               : `Showing ${rangeStart}–${rangeEnd} of ${total}`}
@@ -336,7 +333,7 @@ export default function LeadsPage() {
             >
               Previous
             </Button>
-            <span className="px-1 text-sm text-slate-500">
+            <span className="px-1 text-sm text-muted">
               Page {page} of {pageCount}
             </span>
             <Button
@@ -365,7 +362,7 @@ function Th({
     <th
       scope="col"
       className={
-        "px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 " +
+        "px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted " +
         className
       }
     >

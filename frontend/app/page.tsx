@@ -87,15 +87,16 @@ export default function HomePage() {
       <SiteHeader />
 
       <main className="flex-1">
-        <section className="bg-gradient-to-b from-indigo-50 to-slate-50">
-          <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
-            <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">
+        <section className="bg-sage">
+          <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-24">
+            <p className="text-sm font-semibold uppercase tracking-wide text-leaf">
               Immigration counsel, made approachable
             </p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-              Get a clear path forward on your visa
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
+              Get a clear path forward{" "}
+              <span className="text-leaf">on your visa.</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-forest/80">
               Share a few details and your resume. One of our licensed
               attorneys will review your situation and reach out with the
               options available to you — no obligation.
@@ -103,8 +104,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto -mt-8 max-w-xl px-6 pb-20">
-          <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 sm:p-10">
+        <section className="mx-auto -mt-10 max-w-xl px-6 pb-20">
+          <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-line sm:p-10">
             {submitted ? (
               <SuccessState
                 onReset={() => {
@@ -119,10 +120,10 @@ export default function HomePage() {
             ) : (
               <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
+                  <h2 className="text-xl font-semibold text-ink">
                     Tell us about yourself
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-muted">
                     All fields are required. Your information stays
                     confidential.
                   </p>
@@ -165,7 +166,7 @@ export default function HomePage() {
                 <div>
                   <label
                     htmlFor="resume"
-                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                    className="mb-1.5 block text-sm font-medium text-ink"
                   >
                     Resume / CV
                   </label>
@@ -182,10 +183,10 @@ export default function HomePage() {
                         resume: validateFile(file),
                       }));
                     }}
-                    className="block w-full cursor-pointer rounded-lg text-sm text-slate-600 ring-1 ring-inset ring-slate-300 file:mr-4 file:cursor-pointer file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+                    className="block w-full cursor-pointer rounded-xl text-sm text-muted ring-1 ring-inset ring-line file:mr-4 file:cursor-pointer file:border-0 file:bg-sage-soft file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-forest hover:file:bg-sage"
                     aria-invalid={Boolean(errors.resume)}
                   />
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className="mt-1.5 text-xs text-muted">
                     PDF, DOC, or DOCX · up to 10MB
                   </p>
                   {errors.resume && (
@@ -212,9 +213,9 @@ export default function HomePage() {
 function SuccessState({ onReset }: { onReset: () => void }) {
   return (
     <div className="py-6 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sage">
         <svg
-          className="h-7 w-7 text-emerald-600"
+          className="h-7 w-7 text-forest"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -228,17 +229,17 @@ function SuccessState({ onReset }: { onReset: () => void }) {
           />
         </svg>
       </div>
-      <h2 className="mt-5 text-2xl font-semibold text-slate-900">
+      <h2 className="mt-5 text-2xl font-semibold text-ink">
         Thanks — we&apos;ll be in touch
       </h2>
-      <p className="mx-auto mt-3 max-w-sm text-slate-600">
+      <p className="mx-auto mt-3 max-w-sm text-muted">
         We&apos;ve received your details. One of our attorneys will review your
         information and reach out to you by email shortly.
       </p>
       <button
         type="button"
         onClick={onReset}
-        className="mt-6 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        className="mt-6 text-sm font-medium text-leaf hover:text-forest"
       >
         Submit another inquiry
       </button>
@@ -248,19 +249,16 @@ function SuccessState({ onReset }: { onReset: () => void }) {
 
 function SiteHeader() {
   return (
-    <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
+    <header className="border-b border-line bg-cream-header/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-            A
-          </span>
-          <span className="text-lg font-semibold tracking-tight text-slate-900">
-            Alma
+        <Link href="/" className="flex items-center">
+          <span className="text-2xl font-bold lowercase tracking-tight text-forest">
+            alma
           </span>
         </Link>
         <Link
           href="/login"
-          className="text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="text-sm font-medium text-forest hover:text-forest-dark"
         >
           Attorney login
         </Link>
@@ -271,8 +269,8 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto max-w-5xl px-6 py-6 text-center text-sm text-slate-500">
+    <footer className="border-t border-line bg-cream-header">
+      <div className="mx-auto max-w-5xl px-6 py-6 text-center text-sm text-muted">
         © {new Date().getFullYear()} Alma. This is not legal advice.
       </div>
     </footer>
