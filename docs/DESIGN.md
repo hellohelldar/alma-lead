@@ -27,7 +27,7 @@ The system serves two distinct user types with deliberately different trust leve
 ### Non-goals (for this iteration)
 Multi-tenant firms, multi-attorney assignment, billing, and a full CRM. The data
 model and service boundaries are chosen so these can be added without a rewrite —
-see §8.
+see §9.
 
 ---
 
@@ -324,7 +324,65 @@ To harden for production:
 
 ---
 
-## 8. Future Work
+## 8. Delivery: CI/CD & Environments
+
+Three GitHub Actions pipelines move a change from PR to production. Full operator
+docs (required secrets/variables, server prerequisites) live in
+[`deploy/README.md`](../deploy/README.md).
+
+```
+PR ──CI──▶ merge to main ──staging──▶ staging server + moving prerelease draft
+                                  │
+                         tag vX.Y.Z on main
+                                  │
+                                  ▼
+                       release ──▶ production server + published release
+```
+
+- **CI** (`ci.yml`, on PR + push to `main`). Backend `ruff` lint + `pytest`, plus a
+  dedicated job that runs `alembic upgrade head` against a real Postgres service —
+  the same command the container runs at startup, so a migration that would break
+  the prod boot fails the PR instead. Frontend job runs `eslint` + the production
+  `next build` (which type-checks). The migration check is split out because it is
+  the highest-signal "would prod deploy survive?" gate.
+- **Staging** (`staging.yml`, on push to `main`). Builds the backend and frontend
+  images, pushes them to GHCR, deploys to the staging server, and maintains a
+  single moving `prerelease-main` draft release whose notes are the commits since
+  the last draft — a always-current view of "what's on staging."
+- **Release** (`release.yml`, on a `vX.Y.Z` tag). Drafts a GitHub Release with notes
+  generated from the commit range since the previous tag, **validates the tagged
+  commit is reachable from `main`** (no releasing off a stray branch), builds
+  version-tagged images, deploys production, then flips the release from draft to
+  `latest`. Tag-driven releases give an immutable, auditable artifact per version.
+
+**Environments & isolation.** Staging and production are separate GitHub
+*Environments* (production can require a reviewer for a manual approval gate) and
+separate Compose projects in separate directories on (potentially) separate
+servers. Per-environment config is namespaced by a `STAGING_` / `PRODUCTION_`
+secret+variable prefix that CI strips when synthesizing the stack `.env`, so the
+two environments never share credentials. Deploys are **opt-in** behind a flag
+variable, so the pipelines are safe to merge and exercise via CI before any server
+exists.
+
+**Image & deploy strategy.** Each service is a separate GHCR image tagged with an
+immutable id (8-char SHA for staging, the version tag for releases) plus a moving
+channel tag and a `cache-<channel>` tag used with `--cache-from`. Because the
+frontend bakes `NEXT_PUBLIC_API_BASE_URL` at build time, its image is
+environment-specific — built with each environment's public origin. The deploy
+step is plain SSH + `rsync` of the [deploy Compose file](../deploy/docker-compose.yml)
+and a generated `.env`, then `docker compose pull && up -d`. [Caddy](../deploy/Caddyfile)
+fronts the stack: it auto-provisions TLS for the environment's domain and routes
+`/api` + `/health` to the backend and everything else to the frontend, so the
+browser talks to a single origin (no CORS in the browser path). Schema migrations
+apply automatically on deploy via the backend image's startup `alembic upgrade head`.
+
+The build/deploy mechanics are factored into two composite actions
+(`build-and-push`, `deploy-stack`) shared by the staging and release workflows, so
+the two environments differ only in inputs, not in logic.
+
+---
+
+## 9. Future Work
 
 With more time, in rough priority order:
 
