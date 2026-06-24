@@ -22,6 +22,9 @@ env:
 jobs:
   build-and-deploy:
     name: Build & deploy to staging
+    # Opt-in: set repo/environment variable STAGING_DEPLOY_ENABLED=true once the
+    # staging server + secrets exist. Until then this no-ops (CI still runs).
+    if: ${{ vars.STAGING_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment: staging
     outputs:

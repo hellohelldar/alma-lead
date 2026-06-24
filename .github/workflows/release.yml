@@ -87,6 +87,10 @@ jobs:
 
   build-and-deploy:
     name: Build & deploy to production
+    # Opt-in: set repo/environment variable PRODUCTION_DEPLOY_ENABLED=true once
+    # the production server + secrets exist. Until then the release is drafted
+    # but not built/deployed (stays a draft).
+    if: ${{ vars.PRODUCTION_DEPLOY_ENABLED == 'true' }}
     needs: create-release
     runs-on: ubuntu-latest
     environment: production

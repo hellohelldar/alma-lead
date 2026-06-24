@@ -55,6 +55,13 @@ in the repo secrets, and ports 80/443 open.
 
 ## Required GitHub configuration
 
+Deploys are **opt-in**: the deploy jobs are skipped until you set the flag
+variable, so these workflows are safe to merge before any server exists (CI
+still runs on every PR). Flip them on once the server + secrets are ready:
+
+- `STAGING_DEPLOY_ENABLED=true` — enables the staging deploy on push to `main`.
+- `PRODUCTION_DEPLOY_ENABLED=true` — enables the production build+deploy on a `v*` tag (the release is still drafted while disabled).
+
 Create two **Environments** (`staging`, `production`) — add reviewers to
 `production` for a manual approval gate. CI reads everything else from
 prefix-named **secrets** (sensitive) and **variables** (non-sensitive); the
