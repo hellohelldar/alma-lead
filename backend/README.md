@@ -10,7 +10,7 @@ For the full-stack picture (frontend, Docker Compose, CI/CD) see the
 
 ## Quick start
 
-Runs with zero configuration — SQLite + a console email backend by default, so
+Runs with zero configuration - SQLite + a console email backend by default, so
 no database server or API keys are needed.
 
 ```bash
@@ -102,12 +102,12 @@ All settings come from environment variables (or a `.env` file); see
 | `EMAIL_FROM` | `Alma <onboarding@resend.dev>` | Sender address |
 | `STORAGE_DIR` | `./uploads` | Local resume storage path |
 | `MAX_UPLOAD_BYTES` | `10485760` | Max resume size (10 MB) |
-| `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins — JSON array (`["https://a","https://b"]`) or comma-separated (`https://a,https://b`) |
+| `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins - JSON array (`["https://a","https://b"]`) or comma-separated (`https://a,https://b`) |
 
 ### Swapping backends
 
-- **Email** — implement `EmailBackend` and return it from
+- **Email** - implement `EmailBackend` and return it from
   `app/services/email/__init__.py:get_email_backend()`. Resend and console
   backends ship today.
-- **Storage** — implement `StorageBackend` (e.g. `S3Storage`) and return it from
+- **Storage** - implement `StorageBackend` (e.g. `S3Storage`) and return it from
   `app/services/storage/__init__.py:get_storage()`. No route or schema changes.

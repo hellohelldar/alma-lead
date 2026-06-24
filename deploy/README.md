@@ -37,7 +37,7 @@ for releases), a moving channel tag (`staging` / `production`), and a
 ## On the server
 
 Each environment is an isolated Compose project in its own directory. Both
-**staging and production always run Postgres** — the deploy stack has no SQLite
+**staging and production always run Postgres** - the deploy stack has no SQLite
 option; `DATABASE_URL` is always `postgresql+asyncpg://…`.
 
 | Environment | Compose project | Directory |
@@ -50,7 +50,7 @@ The deploy step rsyncs [`deploy/docker-compose.yml`](docker-compose.yml),
 `docker compose pull && up -d`. The backend image runs `alembic upgrade head`
 on startup, so migrations apply before traffic is served. [Caddy](Caddyfile)
 terminates TLS for `$DOMAIN` and routes `/api` + `/health` to the backend and
-everything else to the frontend (same origin — no CORS needed in the browser).
+everything else to the frontend (same origin - no CORS needed in the browser).
 
 Requirements per server: Docker + Docker Compose v2, an SSH user whose key is
 in the repo secrets, and ports 80/443 open.
@@ -61,10 +61,10 @@ Deploys are **opt-in**: the deploy jobs are skipped until you set the flag
 variable, so these workflows are safe to merge before any server exists (CI
 still runs on every PR). Flip them on once the server + secrets are ready:
 
-- `STAGING_DEPLOY_ENABLED=true` — enables the staging deploy on push to `main`.
-- `PRODUCTION_DEPLOY_ENABLED=true` — enables the production build+deploy on a `v*` tag (the release is still drafted while disabled).
+- `STAGING_DEPLOY_ENABLED=true` - enables the staging deploy on push to `main`.
+- `PRODUCTION_DEPLOY_ENABLED=true` - enables the production build+deploy on a `v*` tag (the release is still drafted while disabled).
 
-Create two **Environments** (`staging`, `production`) — add reviewers to
+Create two **Environments** (`staging`, `production`) - add reviewers to
 `production` for a manual approval gate. CI reads everything else from
 prefix-named **secrets** (sensitive) and **variables** (non-sensitive); the
 prefix is stripped before the value is written into the stack `.env`.
@@ -73,8 +73,8 @@ prefix is stripped before the value is written into the stack `.env`.
 
 | Staging | Production | Example |
 |---------|------------|---------|
-| `STAGING_API_BASE_URL` | `PRODUCTION_API_BASE_URL` | `https://staging.alma.example` — baked into the frontend bundle |
-| `STAGING_DOMAIN` | `PRODUCTION_DOMAIN` | `staging.alma.example` — Caddy site address |
+| `STAGING_API_BASE_URL` | `PRODUCTION_API_BASE_URL` | `https://staging.alma.example` - baked into the frontend bundle |
+| `STAGING_DOMAIN` | `PRODUCTION_DOMAIN` | `staging.alma.example` - Caddy site address |
 | `STAGING_CORS_ORIGINS` | `PRODUCTION_CORS_ORIGINS` | `["https://staging.alma.example"]` |
 | `STAGING_ATTORNEY_EMAIL` | `PRODUCTION_ATTORNEY_EMAIL` | `attorney@alma.com` |
 | `STAGING_ATTORNEY_NAME` | `PRODUCTION_ATTORNEY_NAME` | `Alma Attorney` |

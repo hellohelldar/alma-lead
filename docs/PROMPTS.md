@@ -7,8 +7,8 @@ For the narrative of what was delegated vs. hand-written and why, see
 
 Two tools were used:
 
-- **Claude Code (Opus 4.8)** — primary build: architecture, backend, orchestration of sub-agents, CI/CD, the Alma rebrand.
-- **Cursor Agent (Composer)** — a follow-up session: run/verify the stack, onboarding Q&A, the Postgres-default DB policy + docs.
+- **Claude Code (Opus 4.8)** - primary build: architecture, backend, orchestration of sub-agents, CI/CD, the Alma rebrand.
+- **Cursor Agent (Composer)** - a follow-up session: run/verify the stack, onboarding Q&A, the Postgres-default DB policy + docs.
 
 > These are representative excerpts, lightly trimmed with `…`. Claude Code and
 > Cursor keep full local session transcripts; the load-bearing parts are
@@ -21,25 +21,25 @@ Two tools were used:
 The whole app was driven from a handful of high-level prompts; the agent
 decomposed each into the work below.
 
-> **Initial build** — *"yo let's do this 🚀"* followed by the full Alma
+> **Initial build** - *"yo let's do this 🚀"* followed by the full Alma
 > assignment brief (public lead form: first/last/email/résumé; emails to
 > prospect + attorney on submit; auth-guarded internal list; `PENDING →
 > REACHED_OUT`; FastAPI + Next.js; storage + email service; production-grade
 > structure).
 
-> **CI/CD** — *"add .github workflow and actions for ci/cd … add staging or
+> **CI/CD** - *"add .github workflow and actions for ci/cd … add staging or
 > dev environment (let's call it staging) and production and releases"* (with
 > a sibling repo handed over as the reference for pipeline conventions).
 
-> **Hardening** — *"recheck everything is in place … how to connect everything
+> **Hardening** - *"recheck everything is in place … how to connect everything
 > to PostgreSQL … for production … add that we have staging env, prod
 > environment, releases and add smoke tests to ci/cd add sharding … add
 > everything I told u to AGENTS.md."*
 
-> **Rebrand** — *"design is super AIsh let's change it, use alma colors"* (with
+> **Rebrand** - *"design is super AIsh let's change it, use alma colors"* (with
 > screenshots of tryalma.com).
 
-> **Brand font** — *"here is font for the alma logo: Gellix …"* (with the
+> **Brand font** - *"here is font for the alma logo: Gellix …"* (with the
 > `@font-face` snippet).
 
 > Plus tighteners: *"how to start it"*, *"have u added it to the docs?"*,
@@ -59,13 +59,13 @@ scoped to a non-overlapping directory.
 > immigration law firm. Work ONLY inside `…/frontend/`. … Stack: Next.js 14+
 > (App Router), TypeScript, Tailwind CSS. … Base URL must come from
 > `process.env.NEXT_PUBLIC_API_BASE_URL`. …
-> `POST /api/leads` — PUBLIC. multipart/form-data fields: `first_name`,
+> `POST /api/leads` - PUBLIC. multipart/form-data fields: `first_name`,
 > `last_name`, `email`, `resume` … `GET /api/leads?state=&search=&limit=&offset=`
-> — Bearer. …
+> - Bearer. …
 > Pages: `/` public intake form with client-side validation + success state;
-> `/login` stores the JWT and redirects to `/leads`; `/leads` PROTECTED — table
+> `/login` stores the JWT and redirects to `/leads`; `/leads` PROTECTED - table
 > with status badge, a "Download resume" action (**must fetch with the Bearer
-> header, get a blob, and trigger a browser download — a plain `<a href>` won't
+> header, get a blob, and trigger a browser download - a plain `<a href>` won't
 > work because the endpoint is authed**), a "Mark as Reached Out" button, state
 > filter, debounced search, pagination. On any 401 response, clear the token
 > and redirect to `/login`. …
@@ -76,7 +76,7 @@ scoped to a non-overlapping directory.
 ### Backend test sub-agent
 
 > Write a pytest test suite for an existing FastAPI backend. Work ONLY inside
-> `…/backend/tests/`. Do NOT modify application code — if you find a real bug,
+> `…/backend/tests/`. Do NOT modify application code - if you find a real bug,
 > note it in your final report instead. …
 > **Critical setup notes (the gotchas):** `Settings` is loaded via
 > `@lru_cache get_settings()` and `settings` is a module-level singleton, so
@@ -99,14 +99,14 @@ scoped to a non-overlapping directory.
 > DB + email + object storage, plus request flows for public submission with
 > async email fan-out and internal review); Data model + the `PENDING →
 > REACHED_OUT` state machine; API design table; **Key design decisions &
-> trade-offs — explain each WITH the alternative considered** (SQLite default
+> trade-offs - explain each WITH the alternative considered** (SQLite default
 > but Postgres-ready; pluggable email + why emails go in a background task;
 > pluggable storage; JWT single-account and how it extends to multi-user);
 > Security; Production-readiness & scaling; Future work.
 
 ---
 
-## 3. Cursor Agent (Composer) — follow-up session
+## 3. Cursor Agent (Composer) - follow-up session
 
 A second pass in the IDE to run the stack, learn it, and land the
 Postgres-default DB policy.

@@ -1,4 +1,4 @@
-# Alma — Lead Intake & Attorney Console: System Design
+# Alma - Lead Intake & Attorney Console: System Design
 
 ## 1. Overview & Goals
 
@@ -16,7 +16,7 @@ The system serves two distinct user types with deliberately different trust leve
   lead's lifecycle state. They are alerted by email whenever a new lead arrives.
 
 ### Goals
-- Capture leads reliably — the intake request must not fail just because a
+- Capture leads reliably - the intake request must not fail just because a
   downstream system (email provider) is slow or down.
 - Keep prospect data (especially resumes) private: never expose them on a public
   URL; gate everything internal behind authentication.
@@ -26,15 +26,15 @@ The system serves two distinct user types with deliberately different trust leve
 
 ### Non-goals (for this iteration)
 Multi-tenant firms, multi-attorney assignment, billing, and a full CRM. The data
-model and service boundaries are chosen so these can be added without a rewrite —
+model and service boundaries are chosen so these can be added without a rewrite -
 see §9.
 
 ---
 
 ## 2. Architecture
 
-The system is a conventional three-tier app — a Next.js client, a FastAPI
-service, and a relational database — plus two pluggable side dependencies (an
+The system is a conventional three-tier app - a Next.js client, a FastAPI
+service, and a relational database - plus two pluggable side dependencies (an
 email provider and an object store) that are accessed through abstractions rather
 than wired in directly.
 
@@ -75,9 +75,9 @@ than wired in directly.
 
 The two side dependencies are reached only through the `EmailBackend` and
 `StorageBackend` interfaces, selected by a factory at runtime from environment
-config. The route handlers never import a concrete provider — see §5.
+config. The route handlers never import a concrete provider - see §5.
 
-### (a) Public lead submission — with async email fan-out
+### (a) Public lead submission - with async email fan-out
 
 ```
 Prospect            FastAPI                 Storage      DB        BackgroundTasks
@@ -105,7 +105,7 @@ The handler validates input, persists the resume to the storage backend, writes 
 `leads` row in `PENDING`, commits, and then **schedules** the two emails via
 FastAPI `BackgroundTasks`. The `201` is returned immediately; the emails are sent
 after the response is flushed. Email failures are caught and logged inside
-`send_lead_notifications` and never propagate — a flaky provider can degrade
+`send_lead_notifications` and never propagate - a flaky provider can degrade
 notifications but can never lose a lead. Rationale in §5.
 
 ### (b) Internal review + state transition
@@ -134,7 +134,7 @@ attorney email is presented.
 
 ## 3. Data Model
 
-A single table, `leads`. (Auth has no user table yet — see §5.)
+A single table, `leads`. (Auth has no user table yet - see §5.)
 
 | Column                | Type                         | Notes                                              |
 |-----------------------|------------------------------|----------------------------------------------------|
@@ -147,7 +147,7 @@ A single table, `leads`. (Auth has no user table yet — see §5.)
 | `resume_content_type` | `String(128)`, not null      | MIME type, replayed on download.                   |
 | `state`               | `Enum(PENDING, REACHED_OUT)`, not null, **indexed** | Lifecycle; non-native enum stored as string. |
 | `created_at`          | `DateTime(tz)`, not null     | Defaults to now (UTC).                              |
-| `updated_at`          | `DateTime(tz)`, not null     | `onupdate` bumps it — gives a "last touched" time.  |
+| `updated_at`          | `DateTime(tz)`, not null     | `onupdate` bumps it - gives a "last touched" time.  |
 
 ### State machine
 
@@ -163,7 +163,7 @@ A single table, `leads`. (Auth has no user table yet — see §5.)
 Every lead is born `PENDING`. The only transition is the attorney advancing it to
 `REACHED_OUT` after making contact. The enum is stored as a **string, not a native
 DB enum** (`native_enum=False`), so adding states (e.g. `IN_REVIEW`, `RETAINED`,
-`CLOSED`) is a code change plus a backfill — no fragile `ALTER TYPE` migration that
+`CLOSED`) is a code change plus a backfill - no fragile `ALTER TYPE` migration that
 differs across SQLite and Postgres.
 
 ### Design rationale
@@ -216,12 +216,12 @@ console can paginate without a second count call.
 `postgresql+asyncpg://…` switches engines with no code change, because all data
 access goes through async SQLAlchemy 2.0 and portable column types (string UUIDs,
 non-native enums, tz-aware datetimes). *Alternative considered:* require Postgres
-from day one. Rejected — it adds a setup burden for a reviewer/local dev with no
+from day one. Rejected - it adds a setup burden for a reviewer/local dev with no
 benefit at this scale, and the abstraction makes the upgrade trivial when load
 demands it.
 
 **Pluggable email service + background send.** `get_email_backend()` returns the
-`ResendEmailBackend` (httpx against Resend's HTTP API — no SDK dependency) when
+`ResendEmailBackend` (httpx against Resend's HTTP API - no SDK dependency) when
 `RESEND_API_KEY` is set, otherwise a `ConsoleEmailBackend` that logs the message.
 This means the app is fully exercisable locally with zero secrets, and production
 is one env var away. Emails are sent from a **`BackgroundTasks` job after the
@@ -231,13 +231,13 @@ third-party call on the critical path of revenue-bearing intake. Blocking the
 request on it would add hundreds of ms of latency and, worse, let a provider
 outage turn into lost leads (the prospect sees a 500 and leaves). Delivery is
 therefore **best-effort and decoupled** from persistence. *Alternative:* send
-synchronously and surface failures — rejected because losing the lead is far worse
+synchronously and surface failures - rejected because losing the lead is far worse
 than a missed notification, which can be retried or alerted on.
 
 **Pluggable storage abstraction; files out of the DB.** `StorageBackend` exposes
 `save`/`load`/`exists` over a logical key. `LocalStorage` writes to the filesystem
 now; the factory has a documented seam to return an `S3Storage`/`GcsStorage`
-keyed off a setting. *Why files aren't in the DB:* see §3 — blobs bloat the table,
+keyed off a setting. *Why files aren't in the DB:* see §3 - blobs bloat the table,
 hurt backup/replication, and can't be served via a CDN. The abstraction means the
 swap is invisible to the route handlers and the schema.
 
@@ -249,8 +249,8 @@ one attorney; a stateless token needs no session store and scales horizontally f
 free. *How it extends to real multi-user auth:* introduce a `users` table (id,
 email, `password_hash`, role), have login look users up there, put `user_id` in
 the JWT `sub`, add **refresh tokens** for longer sessions with short access-token
-lifetimes, and gate routes by **role (RBAC)** — none of which disturbs the route
-shapes. *Alternative:* server-side sessions — rejected as unnecessary state for a
+lifetimes, and gate routes by **role (RBAC)** - none of which disturbs the route
+shapes. *Alternative:* server-side sessions - rejected as unnecessary state for a
 single-attorney, API-first design.
 
 **Resume via an authenticated download endpoint, not a public URL.** Resumes are
@@ -276,13 +276,13 @@ Implemented today:
   are rejected (`422`); size is capped at `max_upload_bytes` (10 MB → `413`).
 - **Traversal-safe storage keys.** Keys are server-generated (`{uuid}/{filename}`),
   the filename has `/` stripped, and `LocalStorage` additionally strips `..` and
-  leading slashes before joining to the root — a defense-in-depth guard against
+  leading slashes before joining to the root - a defense-in-depth guard against
   path traversal even though keys aren't user-controlled.
 - **CORS** is restricted to a configured origin list (default
   `http://localhost:3000`), not a wildcard.
 
 To harden for production:
-- **Rate-limit / CAPTCHA the public `POST /api/leads`** — it is the one anonymous,
+- **Rate-limit / CAPTCHA the public `POST /api/leads`** - it is the one anonymous,
   write-and-email endpoint and is the obvious spam/DoS target.
 - **Virus/malware scan uploads** (e.g. ClamAV or an S3-event scanner) before an
   attorney ever opens a resume; quarantine on detection.
@@ -299,7 +299,7 @@ To harden for production:
 
 - **Migrations.** Alembic is the source of truth for schema; `0001_initial`
   creates `leads` with its email/state indexes. The app's startup `create_all` is
-  a dev convenience and a no-op once migrated — production runs `alembic upgrade
+  a dev convenience and a no-op once migrated - production runs `alembic upgrade
   head` on deploy.
 - **SQLite → Postgres.** Set `DATABASE_URL` to an `asyncpg` DSN; the async engine,
   portable types, and Alembic migrations carry over unchanged. Postgres unlocks
@@ -310,11 +310,11 @@ To harden for production:
 - **Emails under load.** `BackgroundTasks` runs in-process, so work is lost if the
   worker dies mid-task and there is no retry. The escape hatch is to make
   `send_lead_notifications` **enqueue** a job (Celery + Redis, or SQS + a worker)
-  instead of running inline — giving durable retries, backoff, and dead-letter
+  instead of running inline - giving durable retries, backoff, and dead-letter
   handling. The call site barely changes because the send is already isolated
   behind one function.
 - **Statelessness & horizontal scaling.** Auth is a stateless JWT and storage is
-  externalized, so the API has no per-instance state — run N replicas behind a load
+  externalized, so the API has no per-instance state - run N replicas behind a load
   balancer. The only thing forcing it stateful today is `LocalStorage` (writes to
   the instance's disk); moving to S3 removes that and makes scale-out clean.
 - **Observability.** Standard logging is wired (`alma.email` logger, etc.). For
@@ -342,24 +342,24 @@ PR ──CI──▶ merge to main ──staging──▶ staging server + movin
 - **CI** (`ci.yml`, on PR + push to `main`). Backend `ruff` lint; `pytest` **sharded
   three ways** as a parallel matrix (via `pytest-split`) so the suite scales as it
   grows; a dedicated job that runs `alembic upgrade head` against a real Postgres
-  service — the same command the container runs at startup, so a migration that
+  service - the same command the container runs at startup, so a migration that
   would break the prod boot fails the PR instead; frontend `eslint` + production
   `next build` (which type-checks); and a **full-stack smoke test** that brings up
   the Docker Compose stack (Postgres + API + web) and runs the whole lead lifecycle
   through HTTP (`scripts/smoke.sh`). The migration and smoke jobs are the
-  highest-signal "would prod actually work?" gates — unit tests pass against
+  highest-signal "would prod actually work?" gates - unit tests pass against
   SQLite, but only the smoke job exercises the built images against Postgres.
 - **Staging** (`staging.yml`, on push to `main`). Builds the backend and frontend
   images, pushes them to GHCR, deploys to the staging server, runs a full
   post-deploy smoke test against the live staging URL (staging can tolerate a
   test lead), and maintains a single moving `prerelease-main` draft release whose
-  notes are the commits since the last draft — an always-current view of "what's
+  notes are the commits since the last draft - an always-current view of "what's
   on staging."
 - **Release** (`release.yml`, on a `vX.Y.Z` tag). Drafts a GitHub Release with notes
   generated from the commit range since the previous tag, **validates the tagged
   commit is reachable from `main`** (no releasing off a stray branch), builds
   version-tagged images, deploys production, runs a **non-destructive** post-deploy
-  smoke check (health + auth gate only — production must not accrue test leads or
+  smoke check (health + auth gate only - production must not accrue test leads or
   fire real emails), then flips the release from draft to `latest`. Tag-driven
   releases give an immutable, auditable artifact per version.
 
@@ -376,7 +376,7 @@ exists.
 immutable id (8-char SHA for staging, the version tag for releases) plus a moving
 channel tag and a `cache-<channel>` tag used with `--cache-from`. Because the
 frontend bakes `NEXT_PUBLIC_API_BASE_URL` at build time, its image is
-environment-specific — built with each environment's public origin. The deploy
+environment-specific - built with each environment's public origin. The deploy
 step is plain SSH + `rsync` of the [deploy Compose file](../deploy/docker-compose.yml)
 and a generated `.env`, then `docker compose pull && up -d`. [Caddy](../deploy/Caddyfile)
 fronts the stack: it auto-provisions TLS for the environment's domain and routes
@@ -394,17 +394,17 @@ the two environments differ only in inputs, not in logic.
 
 With more time, in rough priority order:
 
-- **Audit log of state changes** — who moved a lead to `REACHED_OUT` and when. The
+- **Audit log of state changes** - who moved a lead to `REACHED_OUT` and when. The
   schema already carries `updated_at`; a dedicated `lead_events` table would give a
   full, queryable history.
 - **Lead notes / activity timeline** so an attorney can record call outcomes.
-- **Multi-attorney support** — `users` table, RBAC, refresh tokens (per §5), and
+- **Multi-attorney support** - `users` table, RBAC, refresh tokens (per §5), and
   **lead assignment** (an `assigned_to` FK) so leads route to a specific attorney.
-- **Richer lifecycle** — more states (`IN_REVIEW`, `RETAINED`, `CLOSED`) with
+- **Richer lifecycle** - more states (`IN_REVIEW`, `RETAINED`, `CLOSED`) with
   enforced legal transitions, made cheap by the string-stored enum.
 - **Cursor-based pagination** for the list endpoint to stay stable under heavy
   insert volume (offset pagination drifts as new leads arrive).
-- **Webhook / CRM integration** — push new leads to Salesforce/HubSpot, and accept
+- **Webhook / CRM integration** - push new leads to Salesforce/HubSpot, and accept
   inbound webhooks, reusing the same decoupled background/queue path as email.
 - **Tests.** A test suite is present; expand coverage of the auth boundary, upload
   validation edges, and the background-email path with the console backend.

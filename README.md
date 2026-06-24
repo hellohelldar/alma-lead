@@ -1,12 +1,12 @@
-# Alma — Lead Management
+# Alma - Lead Management
 
 [![CI](https://github.com/hellohelldar/alma-lead/actions/workflows/ci.yml/badge.svg)](https://github.com/hellohelldar/alma-lead/actions/workflows/ci.yml)
 
 A full-stack lead-management application for an immigration law firm.
 
-- **Public lead intake** — a prospect submits their first name, last name, email, and resume/CV.
-- **Automatic notifications** — on submission, both the prospect (confirmation) and an attorney (new-lead alert) are emailed.
-- **Internal console** — an authenticated attorney views all leads and manually transitions each from `PENDING` → `REACHED_OUT` after reaching out.
+- **Public lead intake** - a prospect submits their first name, last name, email, and resume/CV.
+- **Automatic notifications** - on submission, both the prospect (confirmation) and an attorney (new-lead alert) are emailed.
+- **Internal console** - an authenticated attorney views all leads and manually transitions each from `PENDING` → `REACHED_OUT` after reaching out.
 
 **Stack:** FastAPI (async SQLAlchemy 2.0, Pydantic v2, Alembic) · Next.js (App Router, TypeScript, Tailwind) · SQLite/Postgres · Resend (with a zero-config console fallback) · local-filesystem storage (S3-ready).
 
@@ -17,15 +17,15 @@ alma-lead/
 ├── backend/                  FastAPI service (app/, alembic/, tests/)
 ├── frontend/                 Next.js app (app/, components/, lib/)
 ├── deploy/                   staging/production Compose + Caddy (Postgres only)
-├── docker-compose.yml        local Docker — Postgres (default)
-├── docker-compose.sqlite.yml local Docker — SQLite (optional)
+├── docker-compose.yml        local Docker - Postgres (default)
+├── docker-compose.sqlite.yml local Docker - SQLite (optional)
 ├── docs/                     DESIGN.md, AGENTS.md, PROMPTS.md, openapi.json
 └── scripts/smoke.sh          full-stack smoke test
 ```
 
 ---
 
-## Option A — Run locally (no Docker)
+## Option A - Run locally (no Docker)
 
 Two terminals. Requires Python 3.11+ and Node 20+. The API defaults to SQLite and the
 console email backend, so **no database server and no API keys are needed**.
@@ -43,7 +43,7 @@ uvicorn app.main:app --reload
 
 API docs (Swagger): http://localhost:8000/docs · Health: http://localhost:8000/health
 
-Submitted leads "send" two emails — without a `RESEND_API_KEY` these are printed to the
+Submitted leads "send" two emails - without a `RESEND_API_KEY` these are printed to the
 backend console so you can see them. Set `RESEND_API_KEY` in `.env` to send real email.
 
 ### 2. Frontend → http://localhost:3000
@@ -63,21 +63,21 @@ npm run dev
 
 ---
 
-## Option B — Run with Docker Compose
+## Option B - Run with Docker Compose
 
 **Database policy:** staging, production, and CI always use **Postgres**
 (`deploy/docker-compose.yml` and the default `docker-compose.yml`). For local
 Docker you can optionally use **SQLite** instead when you don't need a DB
 container.
 
-### Default — Postgres (matches staging/production)
+### Default - Postgres (matches staging/production)
 
 ```bash
 docker compose up --build
 ```
 
 Brings up Postgres + the API + the web app. Credentials are preconfigured in
-`docker-compose.yml` (override via a root `.env` — see `.env.example`):
+`docker-compose.yml` (override via a root `.env` - see `.env.example`):
 
 | Setting | Value |
 |---------|-------|
@@ -94,7 +94,7 @@ Override secrets/credentials via environment or a root `.env` consumed by Compos
 (`POSTGRES_PASSWORD`, `JWT_SECRET`, `ATTORNEY_PASSWORD`, `RESEND_API_KEY`, …).
 The backend runs `alembic upgrade head` on startup.
 
-### Optional — SQLite (local only)
+### Optional - SQLite (local only)
 
 ```bash
 docker compose -f docker-compose.sqlite.yml up --build
@@ -122,9 +122,9 @@ npm run build             # type-checks + production build
 
 GitHub Actions runs three pipelines (details in [`deploy/README.md`](deploy/README.md)):
 
-- **CI** (`ci.yml`) — every PR: backend ruff lint, **pytest sharded 3 ways** (parallel matrix via `pytest-split`), `alembic upgrade head` on a real Postgres, frontend eslint + production build, and a **full-stack smoke test** (`docker compose up` → Postgres + API + web → [`scripts/smoke.sh`](scripts/smoke.sh) runs the whole lead lifecycle).
-- **Staging** (`staging.yml`) — push to `main`: build images → GHCR, deploy to the staging server, **post-deploy smoke test** against the live URL, maintain a moving `prerelease-main` draft.
-- **Release** (`release.yml`) — push a `vX.Y.Z` tag: draft notes, build version-tagged images, deploy production, **non-destructive post-deploy smoke** (health + auth gate), publish the release.
+- **CI** (`ci.yml`) - every PR: backend ruff lint, **pytest sharded 3 ways** (parallel matrix via `pytest-split`), `alembic upgrade head` on a real Postgres, frontend eslint + production build, and a **full-stack smoke test** (`docker compose up` → Postgres + API + web → [`scripts/smoke.sh`](scripts/smoke.sh) runs the whole lead lifecycle).
+- **Staging** (`staging.yml`) - push to `main`: build images → GHCR, deploy to the staging server, **post-deploy smoke test** against the live URL, maintain a moving `prerelease-main` draft.
+- **Release** (`release.yml`) - push a `vX.Y.Z` tag: draft notes, build version-tagged images, deploy production, **non-destructive post-deploy smoke** (health + auth gate), publish the release.
 
 Deploys are opt-in (`STAGING_DEPLOY_ENABLED` / `PRODUCTION_DEPLOY_ENABLED`), so the pipelines are safe before any server is provisioned. The deployment stack ([`deploy/`](deploy/)) runs the GHCR images behind Caddy with Postgres.
 
@@ -139,7 +139,7 @@ Frontend env (`frontend/.env.example`): `NEXT_PUBLIC_API_BASE_URL`.
 ## Database & persistence
 
 The app talks to its database through async SQLAlchemy and a single
-`DATABASE_URL`, so switching engines is a config change — no code change.
+`DATABASE_URL`, so switching engines is a config change - no code change.
 
 | Context | `DATABASE_URL` | Notes |
 |---------|----------------|-------|
@@ -149,7 +149,7 @@ The app talks to its database through async SQLAlchemy and a single
 | Docker Compose (optional) | `sqlite+aiosqlite:////data/alma.db` | `docker compose -f docker-compose.sqlite.yml up`; local only. |
 | Staging / production | Postgres (required) | [`deploy/docker-compose.yml`](deploy/docker-compose.yml); URL built from `POSTGRES_PASSWORD`. |
 
-**Use the `asyncpg` driver** for Postgres (`postgresql+asyncpg://…`) — the engine
+**Use the `asyncpg` driver** for Postgres (`postgresql+asyncpg://…`) - the engine
 is async. To point a local dev server at Postgres:
 
 ```bash
@@ -172,7 +172,7 @@ model change, generate a migration with
 `alembic revision --autogenerate -m "..."`.
 
 **Other persistence.** Resume files are stored via a `StorageBackend` interface
-(local filesystem in dev, swappable for S3/GCS in production — see
+(local filesystem in dev, swappable for S3/GCS in production - see
 [`docs/DESIGN.md`](docs/DESIGN.md) §5). Both the DB and file storage are external
 to the API process, so it scales horizontally without sticky state once on
 Postgres + object storage.

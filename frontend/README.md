@@ -1,13 +1,13 @@
-# Alma — Frontend
+# Alma - Frontend
 
 Lead-management frontend for an immigration law firm, built with Next.js (App
 Router), TypeScript, and Tailwind CSS.
 
 ## Pages
 
-- `/` — Public lead intake form (name, email, resume upload).
-- `/login` — Attorney sign in.
-- `/leads` — Protected internal console: filter, search, paginate, download
+- `/` - Public lead intake form (name, email, resume upload).
+- `/login` - Attorney sign in.
+- `/leads` - Protected internal console: filter, search, paginate, download
   resumes, and mark leads as reached out.
 
 ## Prerequisites
