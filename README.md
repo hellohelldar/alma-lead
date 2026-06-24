@@ -10,7 +10,7 @@ A full-stack lead-management application for an immigration law firm.
 
 **Stack:** FastAPI (async SQLAlchemy 2.0, Pydantic v2, Alembic) · Next.js (App Router, TypeScript, Tailwind) · SQLite/Postgres · Resend (with a zero-config console fallback) · local-filesystem storage (S3-ready).
 
-See [`docs/DESIGN.md`](docs/DESIGN.md) for the system design and trade-offs, and [`docs/AGENTS.md`](docs/AGENTS.md) + [`NOTES.md`](NOTES.md) for the coding-agent usage writeup and attribution.
+See [`docs/DESIGN.md`](docs/DESIGN.md) for the system design and trade-offs, [`docs/AGENTS.md`](docs/AGENTS.md) + [`NOTES.md`](NOTES.md) for the coding-agent usage writeup and attribution, and [`docs/PROMPTS.md`](docs/PROMPTS.md) for representative prompt logs.
 
 ```
 alma-lead/
@@ -19,7 +19,7 @@ alma-lead/
 ├── deploy/                   staging/production Compose + Caddy (Postgres only)
 ├── docker-compose.yml        local Docker — Postgres (default)
 ├── docker-compose.sqlite.yml local Docker — SQLite (optional)
-├── docs/                     DESIGN.md, AGENTS.md, openapi.json
+├── docs/                     DESIGN.md, AGENTS.md, PROMPTS.md, openapi.json
 └── scripts/smoke.sh          full-stack smoke test
 ```
 

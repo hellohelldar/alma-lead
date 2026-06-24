@@ -78,4 +78,7 @@ The split was deliberate: **freeze the contract by hand, then fan out everything
 **Design-doc sub-agent (excerpt):**
 > Write a high-quality system design document at `docs/DESIGN.md`. … Read the implementation files to be accurate. … Explain and justify each decision **with the alternative considered**: SQLite default but Postgres-ready; pluggable email + why emails are sent in a background task; pluggable storage; JWT single-account and how it extends to multi-user.
 
-Full session transcript accompanies this submission; the excerpts above are the load-bearing parts of each delegation.
+A fuller, consolidated prompt log — the human-level asks that drove each phase,
+the verbatim sub-agent delegation prompts, and the Cursor/Composer follow-up —
+lives in [`PROMPTS.md`](PROMPTS.md). The excerpts above are the load-bearing
+parts of each delegation.
