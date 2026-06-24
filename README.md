@@ -1,5 +1,7 @@
 # Alma — Lead Management
 
+[![CI](https://github.com/hellohelldar/alma-lead/actions/workflows/ci.yml/badge.svg)](https://github.com/hellohelldar/alma-lead/actions/workflows/ci.yml)
+
 A full-stack lead-management application for an immigration law firm.
 
 - **Public lead intake** — a prospect submits their first name, last name, email, and resume/CV.
@@ -86,6 +88,16 @@ npm run build             # type-checks + production build
 ```
 
 ---
+
+## CI/CD
+
+GitHub Actions runs three pipelines (details in [`deploy/README.md`](deploy/README.md)):
+
+- **CI** (`ci.yml`) — every PR: backend ruff + pytest, `alembic upgrade head` on a real Postgres, frontend eslint + production build.
+- **Staging** (`staging.yml`) — push to `main`: build images → GHCR, deploy to the staging server, maintain a moving `prerelease-main` draft.
+- **Release** (`release.yml`) — push a `vX.Y.Z` tag: draft notes, build version-tagged images, deploy production, publish the release.
+
+Deploys are opt-in (`STAGING_DEPLOY_ENABLED` / `PRODUCTION_DEPLOY_ENABLED`), so the pipelines are safe before any server is provisioned. The deployment stack ([`deploy/`](deploy/)) runs the GHCR images behind Caddy with Postgres.
 
 ## Configuration reference
 
