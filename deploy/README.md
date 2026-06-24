@@ -5,9 +5,9 @@ pipelines:
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| [`ci.yml`](../.github/workflows/ci.yml) | PR to `main` (and pushes to `main`) | Backend lint (ruff) + tests (pytest) + `alembic upgrade head` against a real Postgres; frontend lint (eslint) + production build. |
-| [`staging.yml`](../.github/workflows/staging.yml) | push to `main` | Builds `backend`/`frontend` images → GHCR, deploys to the **staging** server, and maintains a moving `prerelease-main` draft release. |
-| [`release.yml`](../.github/workflows/release.yml) | push of a `vX.Y.Z` tag (or manual dispatch) | Drafts a GitHub Release with auto-generated notes, validates the tag is on `main`, builds version-tagged images, deploys to **production**, then publishes the release as `latest`. |
+| [`ci.yml`](../.github/workflows/ci.yml) | PR to `main` (and pushes to `main`) | Backend lint (ruff) + tests (pytest, **sharded 3×** via `pytest-split`) + `alembic upgrade head` against a real Postgres; frontend lint (eslint) + production build; a **full-stack smoke test** (`docker compose` → `scripts/smoke.sh`). |
+| [`staging.yml`](../.github/workflows/staging.yml) | push to `main` | Builds `backend`/`frontend` images → GHCR, deploys to the **staging** server, runs a **post-deploy smoke test** against the live URL, and maintains a moving `prerelease-main` draft release. |
+| [`release.yml`](../.github/workflows/release.yml) | push of a `vX.Y.Z` tag (or manual dispatch) | Drafts a GitHub Release with auto-generated notes, validates the tag is on `main`, builds version-tagged images, deploys to **production**, runs a **non-destructive post-deploy smoke** (health + auth gate), then publishes the release as `latest`. |
 
 Shared logic lives in two composite actions: [`build-and-push`](../.github/actions/build-and-push)
 and [`deploy-stack`](../.github/actions/deploy-stack).

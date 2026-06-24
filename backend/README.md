@@ -102,7 +102,7 @@ All settings come from environment variables (or a `.env` file); see
 | `EMAIL_FROM` | `Alma <onboarding@resend.dev>` | Sender address |
 | `STORAGE_DIR` | `./uploads` | Local resume storage path |
 | `MAX_UPLOAD_BYTES` | `10485760` | Max resume size (10 MB) |
-| `CORS_ORIGINS` | `["http://localhost:3000"]` | JSON array of allowed origins |
+| `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins — JSON array (`["https://a","https://b"]`) or comma-separated (`https://a,https://b`) |
 
 ### Swapping backends
 

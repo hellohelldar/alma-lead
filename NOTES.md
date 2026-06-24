@@ -25,10 +25,13 @@ Authored and verified directly; the API contract and integration glue.
 - `backend/pyproject.toml`, `backend/Dockerfile`, `backend/.env.example`
 - `docker-compose.yml`, `README.md`, `NOTES.md`, `docs/AGENTS.md`
 - `.gitignore`, integration testing, and the fix to `frontend/.gitignore`
-- `.github/` — CI + staging/production deploy + release workflows and the
-  `build-and-push` / `deploy-stack` composite actions (modeled on the team's
-  existing Outtalent pipelines)
+- `.github/` — CI (sharded tests + smoke) + staging/production deploy + release
+  workflows and the `build-and-push` / `deploy-stack` composite actions (modeled
+  on the team's existing Outtalent pipelines)
 - `deploy/` — GHCR-image Compose stack, Caddyfile, deployment guide
+- `scripts/smoke.sh` — end-to-end smoke test (CI + post-deploy)
+- the `CORS_ORIGINS` `NoDecode` config fix (found via the smoke test — see
+  `docs/AGENTS.md`)
 
 ## Delegated to sub-agents
 

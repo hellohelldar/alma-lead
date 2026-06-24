@@ -93,9 +93,9 @@ npm run build             # type-checks + production build
 
 GitHub Actions runs three pipelines (details in [`deploy/README.md`](deploy/README.md)):
 
-- **CI** (`ci.yml`) — every PR: backend ruff + pytest, `alembic upgrade head` on a real Postgres, frontend eslint + production build.
-- **Staging** (`staging.yml`) — push to `main`: build images → GHCR, deploy to the staging server, maintain a moving `prerelease-main` draft.
-- **Release** (`release.yml`) — push a `vX.Y.Z` tag: draft notes, build version-tagged images, deploy production, publish the release.
+- **CI** (`ci.yml`) — every PR: backend ruff lint, **pytest sharded 3 ways** (parallel matrix via `pytest-split`), `alembic upgrade head` on a real Postgres, frontend eslint + production build, and a **full-stack smoke test** (`docker compose up` → Postgres + API + web → [`scripts/smoke.sh`](scripts/smoke.sh) runs the whole lead lifecycle).
+- **Staging** (`staging.yml`) — push to `main`: build images → GHCR, deploy to the staging server, **post-deploy smoke test** against the live URL, maintain a moving `prerelease-main` draft.
+- **Release** (`release.yml`) — push a `vX.Y.Z` tag: draft notes, build version-tagged images, deploy production, **non-destructive post-deploy smoke** (health + auth gate), publish the release.
 
 Deploys are opt-in (`STAGING_DEPLOY_ENABLED` / `PRODUCTION_DEPLOY_ENABLED`), so the pipelines are safe before any server is provisioned. The deployment stack ([`deploy/`](deploy/)) runs the GHCR images behind Caddy with Postgres.
 
@@ -107,11 +107,42 @@ Backend env (`backend/.env.example`): `DATABASE_URL`, `JWT_SECRET`, `ACCESS_TOKE
 
 Frontend env (`frontend/.env.example`): `NEXT_PUBLIC_API_BASE_URL`.
 
-### Switching to Postgres without Docker
+## Database & persistence
+
+The app talks to its database through async SQLAlchemy and a single
+`DATABASE_URL`, so switching engines is a config change — no code change.
+
+| Context | `DATABASE_URL` | Notes |
+|---------|----------------|-------|
+| Local dev (default) | `sqlite+aiosqlite:///./alma.db` | Zero setup; file-based. |
+| Local Postgres | `postgresql+asyncpg://alma:alma@localhost:5432/alma` | Run any Postgres; then `alembic upgrade head`. |
+| Docker Compose | `postgresql+asyncpg://alma:alma@db:5432/alma` | Set automatically in `docker-compose.yml`. |
+| Staging / production | from `STAGING_`/`PRODUCTION_` secrets | The deploy stack ([`deploy/`](deploy/)) runs Postgres; the URL is built from `POSTGRES_PASSWORD`. |
+
+**Use the `asyncpg` driver** for Postgres (`postgresql+asyncpg://…`) — the engine
+is async. To point a local dev server at Postgres:
 
 ```bash
 # backend/.env
 DATABASE_URL=postgresql+asyncpg://alma:alma@localhost:5432/alma
 ```
 
-Then `alembic upgrade head` and run as usual.
+```bash
+cd backend && source .venv/bin/activate
+alembic upgrade head      # apply the schema to the new database
+uvicorn app.main:app --reload
+```
+
+**Migrations are the source of truth.** Alembic owns the schema
+(`backend/alembic/versions/`); the app's startup `create_all` is a dev
+convenience and a no-op once migrated. In Docker and in every deployed
+environment the backend image runs `alembic upgrade head` on startup, so
+schema changes apply automatically before the server serves traffic. After a
+model change, generate a migration with
+`alembic revision --autogenerate -m "..."`.
+
+**Other persistence.** Resume files are stored via a `StorageBackend` interface
+(local filesystem in dev, swappable for S3/GCS in production — see
+[`docs/DESIGN.md`](docs/DESIGN.md) §5). Both the DB and file storage are external
+to the API process, so it scales horizontally without sticky state once on
+Postgres + object storage.

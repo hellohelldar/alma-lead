@@ -339,21 +339,29 @@ PR ──CI──▶ merge to main ──staging──▶ staging server + movin
                        release ──▶ production server + published release
 ```
 
-- **CI** (`ci.yml`, on PR + push to `main`). Backend `ruff` lint + `pytest`, plus a
-  dedicated job that runs `alembic upgrade head` against a real Postgres service —
-  the same command the container runs at startup, so a migration that would break
-  the prod boot fails the PR instead. Frontend job runs `eslint` + the production
-  `next build` (which type-checks). The migration check is split out because it is
-  the highest-signal "would prod deploy survive?" gate.
+- **CI** (`ci.yml`, on PR + push to `main`). Backend `ruff` lint; `pytest` **sharded
+  three ways** as a parallel matrix (via `pytest-split`) so the suite scales as it
+  grows; a dedicated job that runs `alembic upgrade head` against a real Postgres
+  service — the same command the container runs at startup, so a migration that
+  would break the prod boot fails the PR instead; frontend `eslint` + production
+  `next build` (which type-checks); and a **full-stack smoke test** that brings up
+  the Docker Compose stack (Postgres + API + web) and runs the whole lead lifecycle
+  through HTTP (`scripts/smoke.sh`). The migration and smoke jobs are the
+  highest-signal "would prod actually work?" gates — unit tests pass against
+  SQLite, but only the smoke job exercises the built images against Postgres.
 - **Staging** (`staging.yml`, on push to `main`). Builds the backend and frontend
-  images, pushes them to GHCR, deploys to the staging server, and maintains a
-  single moving `prerelease-main` draft release whose notes are the commits since
-  the last draft — a always-current view of "what's on staging."
+  images, pushes them to GHCR, deploys to the staging server, runs a full
+  post-deploy smoke test against the live staging URL (staging can tolerate a
+  test lead), and maintains a single moving `prerelease-main` draft release whose
+  notes are the commits since the last draft — an always-current view of "what's
+  on staging."
 - **Release** (`release.yml`, on a `vX.Y.Z` tag). Drafts a GitHub Release with notes
   generated from the commit range since the previous tag, **validates the tagged
   commit is reachable from `main`** (no releasing off a stray branch), builds
-  version-tagged images, deploys production, then flips the release from draft to
-  `latest`. Tag-driven releases give an immutable, auditable artifact per version.
+  version-tagged images, deploys production, runs a **non-destructive** post-deploy
+  smoke check (health + auth gate only — production must not accrue test leads or
+  fire real emails), then flips the release from draft to `latest`. Tag-driven
+  releases give an immutable, auditable artifact per version.
 
 **Environments & isolation.** Staging and production are separate GitHub
 *Environments* (production can require a reviewer for a manual approval gate) and

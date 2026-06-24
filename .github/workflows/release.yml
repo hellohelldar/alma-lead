@@ -138,6 +138,13 @@ jobs:
           actor: ${{ github.actor }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Post-deploy smoke test (non-destructive)
+        # Health + auth-gate only — production must not accrue test leads or
+        # fire real emails on every release. Fails the release if not serving.
+        run: bash scripts/smoke.sh "https://${{ vars.PRODUCTION_DOMAIN }}"
+        env:
+          HEALTH_ONLY: "1"
+
   publish-release:
     name: Publish release
     needs: [create-release, build-and-deploy]

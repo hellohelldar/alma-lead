@@ -75,6 +75,14 @@ jobs:
           actor: ${{ github.actor }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Post-deploy smoke test
+        # Full lifecycle against the live staging URL — staging can tolerate a
+        # test lead. Fails the deploy if the release isn't actually serving.
+        run: bash scripts/smoke.sh "https://${{ vars.STAGING_DOMAIN }}"
+        env:
+          ATTORNEY_EMAIL: ${{ vars.STAGING_ATTORNEY_EMAIL || 'attorney@alma.com' }}
+          ATTORNEY_PASSWORD: ${{ secrets.STAGING_ATTORNEY_PASSWORD }}
+
   prerelease:
     name: Update moving prerelease draft
     needs: build-and-deploy

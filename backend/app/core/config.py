@@ -5,10 +5,12 @@ configuration (`uvicorn app.main:app`). Override via environment or a `.env`
 file for staging/production.
 """
 
+import json
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -54,13 +56,22 @@ class Settings(BaseSettings):
     )
 
     # --- CORS ---
-    cors_origins: list[str] = ["http://localhost:3000"]
+    # NoDecode disables pydantic-settings' automatic JSON parsing for this list
+    # field, so the validator below can accept BOTH a JSON array
+    # (`["https://a","https://b"]`) and a plain comma-separated string
+    # (`https://a,https://b`) from the environment without raising.
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def _split_origins(cls, v: object) -> object:
+    def _parse_origins(cls, v: object) -> object:
         if isinstance(v, str):
-            return [o.strip() for o in v.split(",") if o.strip()]
+            s = v.strip()
+            if not s:
+                return []
+            if s.startswith("["):
+                return json.loads(s)
+            return [o.strip() for o in s.split(",") if o.strip()]
         return v
 
 
