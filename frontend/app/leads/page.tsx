@@ -173,7 +173,7 @@ export default function LeadsPage() {
       <header className="border-b border-line bg-cream-header">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-bold lowercase tracking-tight text-forest">
+            <span className="font-logo text-2xl font-bold lowercase tracking-tight text-forest">
               alma
             </span>
             <span className="rounded-full bg-sage-soft px-2.5 py-0.5 text-xs font-medium text-leaf">

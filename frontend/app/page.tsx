@@ -252,7 +252,7 @@ function SiteHeader() {
     <header className="border-b border-line bg-cream-header/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center">
-          <span className="text-2xl font-bold lowercase tracking-tight text-forest">
+          <span className="font-logo text-2xl font-bold lowercase tracking-tight text-forest">
             alma
           </span>
         </Link>

@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
+/* Gellix — Alma's brand typeface (used for the wordmark). Referenced from
+   Alma's own public CDN so no licensed binary is vendored into this repo. */
+@font-face {
+  font-family: "Gellix";
+  src: url("https://cdn.prod.website-files.com/67899ab4e6c7ecc71a7add09/678a43cae814c0e60e8ee4b4_Gellix-Regular.woff")
+    format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gellix";
+  src: url("https://cdn.prod.website-files.com/67899ab4e6c7ecc71a7add09/678a43ca37e77d52c3c8aaa2_Gellix-Medium.woff")
+    format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gellix";
+  src: url("https://cdn.prod.website-files.com/67899ab4e6c7ecc71a7add09/678a43caea9fd9b159aa5d36_Gellix-Bold.woff")
+    format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Alma brand tokens (tryalma.com): warm cream canvas, forest + sage greens,
    friendly rounded geometric type. Exposed as Tailwind color/font utilities. */
 @theme {
+  --font-logo: "Gellix", var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --color-cream: #fbf3e8; /* page canvas */
   --color-cream-header: #fdf6ec; /* slightly lighter header/footer */
   --color-sage: #d8ebb2; /* hero / accent panels */

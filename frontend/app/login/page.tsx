@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center">
-            <span className="text-2xl font-bold lowercase tracking-tight text-forest">
+            <span className="font-logo text-2xl font-bold lowercase tracking-tight text-forest">
               alma
             </span>
           </Link>
