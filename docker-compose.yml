@@ -1,0 +1,62 @@
+# Full production-like stack: Postgres + FastAPI + Next.js.
+# Local dev without Docker can skip this entirely (SQLite default) — see README.
+#
+#   docker compose up --build
+#
+# Frontend → http://localhost:3000   API → http://localhost:8000/docs
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: alma
+      POSTGRES_PASSWORD: alma
+      POSTGRES_DB: alma
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alma"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://alma:alma@db:5432/alma
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      ATTORNEY_EMAIL: ${ATTORNEY_EMAIL:-attorney@alma.com}
+      ATTORNEY_PASSWORD: ${ATTORNEY_PASSWORD:-changeme}
+      ATTORNEY_NAME: ${ATTORNEY_NAME:-Alma Attorney}
+      ATTORNEY_NOTIFY_EMAIL: ${ATTORNEY_NOTIFY_EMAIL:-attorney@alma.com}
+      # Set RESEND_API_KEY to send real email; otherwise emails log to stdout.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Alma <onboarding@resend.dev>}
+      STORAGE_DIR: /data/uploads
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the client bundle at build time; the browser reaches the
+        # API on the host-published port, so this is localhost, not `backend`.
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:
