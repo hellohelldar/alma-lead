@@ -1,0 +1,147 @@
+name: Release — production
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing tag to release (example: v1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  CHANNEL: production
+  COMPOSE_PROJECT: alma-production
+  REMOTE_DIR: /opt/alma/production
+
+jobs:
+  create-release:
+    name: Draft release & validate tag
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.vars.outputs.release_tag }}
+      release_commit: ${{ steps.vars.outputs.release_commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release target
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            release_tag="${{ github.event.inputs.release_tag }}"
+          else
+            release_tag="${{ github.ref_name }}"
+          fi
+          if ! git rev-parse "refs/tags/${release_tag}" >/dev/null 2>&1; then
+            echo "Tag ${release_tag} does not exist." && exit 1
+          fi
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "release_commit=$(git rev-list -n 1 "${release_tag}")" >> "$GITHUB_OUTPUT"
+
+      - name: Validate tag is on main
+        run: |
+          git fetch origin main --force
+          if ! git merge-base --is-ancestor "${{ steps.vars.outputs.release_commit }}" origin/main; then
+            echo "Tag commit is not reachable from origin/main." && exit 1
+          fi
+
+      - name: Generate release notes
+        run: |
+          tag="${{ steps.vars.outputs.release_tag }}"
+          commit="${{ steps.vars.outputs.release_commit }}"
+          prev=$(git tag --list 'v*' --sort=-v:refname | grep -vx "${tag}" | sed -n '1p')
+          if [ -z "${prev}" ]; then
+            git log --oneline --no-merges "${commit}" > /tmp/commits.txt
+          else
+            git log --oneline --no-merges "${prev}..${commit}" > /tmp/commits.txt
+          fi
+          [ -s /tmp/commits.txt ] || echo "No changes listed." > /tmp/commits.txt
+          { echo "## Changes"; echo ""; sed 's/^/- /' /tmp/commits.txt; } > /tmp/notes.md
+
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.vars.outputs.release_tag }}"
+          title="Alma ${tag}"
+          if gh release view "${tag}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit "${tag}" --repo "${{ github.repository }}" --title "${title}" --notes-file /tmp/notes.md
+          else
+            gh release create "${tag}" --repo "${{ github.repository }}" \
+              --target "${{ steps.vars.outputs.release_commit }}" --title "${title}" \
+              --notes-file /tmp/notes.md --draft
+          fi
+
+  build-and-deploy:
+    name: Build & deploy to production
+    needs: create-release
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      RELEASE_TAG: ${{ needs.create-release.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.release_commit }}
+
+      - name: Build & push images
+        id: build
+        uses: ./.github/actions/build-and-push
+        with:
+          image_base: ${{ env.REGISTRY }}/${{ github.repository }}
+          tag: ${{ env.RELEASE_TAG }}
+          channel: ${{ env.CHANNEL }}
+          api_base_url: ${{ vars.PRODUCTION_API_BASE_URL }}
+          actor: ${{ github.actor }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate .env for the remote stack
+        env:
+          SECRETS_CONTEXT: ${{ toJSON(secrets) }}
+          VARS_CONTEXT: ${{ toJSON(vars) }}
+        run: |
+          rm -f .env
+          {
+            echo "BACKEND_IMAGE=${{ steps.build.outputs.backend_image }}"
+            echo "FRONTEND_IMAGE=${{ steps.build.outputs.frontend_image }}"
+            echo "COMPOSE_MAINTAINER=${{ env.COMPOSE_PROJECT }}"
+          } >> .env
+          echo "$SECRETS_CONTEXT" | jq -r 'to_entries[] | select(.key|startswith("PRODUCTION_")) | select(.value|contains("\n")|not) | "\(.key|sub("^PRODUCTION_";""))=\(.value)"' >> .env
+          echo "$VARS_CONTEXT"    | jq -r 'to_entries[] | select(.key|startswith("PRODUCTION_")) | "\(.key|sub("^PRODUCTION_";""))=\(.value)"' >> .env
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-stack
+        with:
+          ssh_key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          server_ip: ${{ secrets.PRODUCTION_SERVER_IP }}
+          server_username: ${{ secrets.PRODUCTION_SERVER_USERNAME }}
+          directory: ${{ env.REMOTE_DIR }}
+          compose_project: ${{ env.COMPOSE_PROJECT }}
+          registry: ${{ env.REGISTRY }}
+          actor: ${{ github.actor }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-release:
+    name: Publish release
+    needs: [create-release, build-and-deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark release as latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ needs.create-release.outputs.release_tag }}" \
+            --repo "${{ github.repository }}" --draft=false --latest

@@ -1,0 +1,86 @@
+# Remote deployment stack (staging & production).
+#
+# This file is rsynced to the server by the CI deploy step alongside a
+# generated `.env`. Unlike the root docker-compose.yml (which builds images
+# locally for dev), this one runs pre-built images pulled from GHCR and puts
+# Caddy in front for TLS + same-origin routing.
+#
+# Required .env keys (synthesized by CI from STAGING_/PRODUCTION_ secrets+vars):
+#   BACKEND_IMAGE, FRONTEND_IMAGE, COMPOSE_MAINTAINER,
+#   DOMAIN, POSTGRES_PASSWORD, JWT_SECRET, ATTORNEY_PASSWORD, CORS_ORIGINS,
+#   (optional) RESEND_API_KEY, EMAIL_FROM, ATTORNEY_EMAIL, ATTORNEY_NAME,
+#             ATTORNEY_NOTIFY_EMAIL
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: alma
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: alma
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alma"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      maintainer: ${COMPOSE_MAINTAINER:-alma}
+
+  backend:
+    image: ${BACKEND_IMAGE:?set in .env}
+    restart: unless-stopped
+    # Image CMD runs `alembic upgrade head` then uvicorn, so migrations apply
+    # on every deploy before the server accepts traffic.
+    environment:
+      DATABASE_URL: postgresql+asyncpg://alma:${POSTGRES_PASSWORD}@db:5432/alma
+      JWT_SECRET: ${JWT_SECRET:?set in .env}
+      ATTORNEY_EMAIL: ${ATTORNEY_EMAIL:-attorney@alma.com}
+      ATTORNEY_PASSWORD: ${ATTORNEY_PASSWORD:?set in .env}
+      ATTORNEY_NAME: ${ATTORNEY_NAME:-Alma Attorney}
+      ATTORNEY_NOTIFY_EMAIL: ${ATTORNEY_NOTIFY_EMAIL:-attorney@alma.com}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Alma <onboarding@resend.dev>}
+      STORAGE_DIR: /data/uploads
+      CORS_ORIGINS: ${CORS_ORIGINS:-[]}
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      maintainer: ${COMPOSE_MAINTAINER:-alma}
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?set in .env}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    labels:
+      maintainer: ${COMPOSE_MAINTAINER:-alma}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    labels:
+      maintainer: ${COMPOSE_MAINTAINER:-alma}
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

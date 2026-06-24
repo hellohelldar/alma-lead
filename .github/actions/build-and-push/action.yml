@@ -1,0 +1,85 @@
+name: Build and push images
+description: >
+  Build the backend and frontend images and push them to GHCR. The frontend's
+  public API base URL is baked at build time, so it is environment-specific.
+
+inputs:
+  registry:
+    description: Container registry
+    required: false
+    default: ghcr.io
+  image_base:
+    description: "Image path base, e.g. ghcr.io/owner/repo"
+    required: true
+  tag:
+    description: "Unique immutable tag (short SHA for staging, vX.Y.Z for prod)"
+    required: true
+  channel:
+    description: "Moving channel tag (staging|production) — also used for the build cache"
+    required: true
+  api_base_url:
+    description: "NEXT_PUBLIC_API_BASE_URL baked into the frontend bundle"
+    required: true
+  actor:
+    description: GitHub actor for registry login
+    required: true
+  github_token:
+    description: GITHUB_TOKEN for registry login
+    required: true
+
+outputs:
+  backend_image:
+    description: Fully-qualified backend image ref (tagged with the unique tag)
+    value: ${{ steps.refs.outputs.backend_image }}
+  frontend_image:
+    description: Fully-qualified frontend image ref (tagged with the unique tag)
+    value: ${{ steps.refs.outputs.frontend_image }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compute image refs
+      id: refs
+      shell: bash
+      run: |
+        backend="${{ inputs.image_base }}/backend"
+        frontend="${{ inputs.image_base }}/frontend"
+        echo "backend_repo=$backend" >> "$GITHUB_OUTPUT"
+        echo "frontend_repo=$frontend" >> "$GITHUB_OUTPUT"
+        echo "backend_image=$backend:${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+        echo "frontend_image=$frontend:${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+
+    - name: Log in to GHCR
+      shell: bash
+      run: echo "${{ inputs.github_token }}" | docker login ${{ inputs.registry }} -u ${{ inputs.actor }} --password-stdin
+
+    - name: Build & push backend
+      shell: bash
+      run: |
+        repo="${{ steps.refs.outputs.backend_repo }}"
+        docker pull "$repo:cache-${{ inputs.channel }}" || true
+        docker build \
+          --cache-from "$repo:cache-${{ inputs.channel }}" \
+          -t "$repo:${{ inputs.tag }}" \
+          -t "$repo:${{ inputs.channel }}" \
+          -t "$repo:cache-${{ inputs.channel }}" \
+          ./backend
+        docker push "$repo:${{ inputs.tag }}"
+        docker push "$repo:${{ inputs.channel }}"
+        docker push "$repo:cache-${{ inputs.channel }}"
+
+    - name: Build & push frontend
+      shell: bash
+      run: |
+        repo="${{ steps.refs.outputs.frontend_repo }}"
+        docker pull "$repo:cache-${{ inputs.channel }}" || true
+        docker build \
+          --cache-from "$repo:cache-${{ inputs.channel }}" \
+          --build-arg NEXT_PUBLIC_API_BASE_URL="${{ inputs.api_base_url }}" \
+          -t "$repo:${{ inputs.tag }}" \
+          -t "$repo:${{ inputs.channel }}" \
+          -t "$repo:cache-${{ inputs.channel }}" \
+          ./frontend
+        docker push "$repo:${{ inputs.tag }}"
+        docker push "$repo:${{ inputs.channel }}"
+        docker push "$repo:cache-${{ inputs.channel }}"

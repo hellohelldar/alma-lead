@@ -1,0 +1,63 @@
+name: Deploy stack over SSH
+description: >
+  Ship the deploy compose file, Caddyfile and a generated .env to the target
+  server, then pull the freshly built images and (re)start the stack.
+  Expects a `.env` file to already exist in the workspace root.
+
+inputs:
+  ssh_key:
+    description: Private SSH key for the target server
+    required: true
+  server_ip:
+    description: Target server IP/host
+    required: true
+  server_username:
+    description: SSH username
+    required: true
+  directory:
+    description: "Remote directory to deploy into, e.g. /opt/alma/staging"
+    required: true
+  compose_project:
+    description: "docker compose -p project name (also the image-prune label)"
+    required: true
+  registry:
+    required: false
+    default: ghcr.io
+  actor:
+    required: true
+  github_token:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up SSH
+      shell: bash
+      run: |
+        which ssh-agent || ( sudo apt-get update -y && sudo apt-get install -y openssh-client )
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        echo "${{ inputs.ssh_key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/id_rsa
+        ssh-keyscan -p 22 -H "${{ inputs.server_ip }}" >> ~/.ssh/known_hosts
+
+    - name: Sync deploy files
+      shell: bash
+      run: |
+        host="${{ inputs.server_username }}@${{ inputs.server_ip }}"
+        ssh -p 22 -T "$host" "mkdir -p '${{ inputs.directory }}'"
+        rsync -zavP -e 'ssh -p 22' \
+          deploy/docker-compose.yml \
+          deploy/Caddyfile \
+          .env \
+          "$host:${{ inputs.directory }}/"
+
+    - name: Pull images and (re)start the stack
+      shell: bash
+      run: |
+        host="${{ inputs.server_username }}@${{ inputs.server_ip }}"
+        ssh -p 22 -T "$host" "echo '${{ inputs.github_token }}' | docker login ${{ inputs.registry }} -u ${{ inputs.actor }} --password-stdin"
+        ssh -p 22 -T "$host" "cd '${{ inputs.directory }}' && docker compose -p '${{ inputs.compose_project }}' pull"
+        ssh -p 22 -T "$host" "cd '${{ inputs.directory }}' && docker compose -p '${{ inputs.compose_project }}' up -d --remove-orphans"
+        ssh -p 22 -T "$host" "docker image prune -af --filter 'label=maintainer=${{ inputs.compose_project }}'"

@@ -1,0 +1,123 @@
+name: Staging — build, deploy & prerelease
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  CHANNEL: staging
+  COMPOSE_PROJECT: alma-staging
+  REMOTE_DIR: /opt/alma/staging
+
+jobs:
+  build-and-deploy:
+    name: Build & deploy to staging
+    runs-on: ubuntu-latest
+    environment: staging
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: vars
+        run: echo "tag=${GITHUB_SHA:0:8}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push images
+        id: build
+        uses: ./.github/actions/build-and-push
+        with:
+          image_base: ${{ env.REGISTRY }}/${{ github.repository }}
+          tag: ${{ steps.vars.outputs.tag }}
+          channel: ${{ env.CHANNEL }}
+          # Public origin baked into the frontend bundle (Caddy serves /api same-origin).
+          api_base_url: ${{ vars.STAGING_API_BASE_URL }}
+          actor: ${{ github.actor }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate .env for the remote stack
+        env:
+          SECRETS_CONTEXT: ${{ toJSON(secrets) }}
+          VARS_CONTEXT: ${{ toJSON(vars) }}
+        run: |
+          rm -f .env
+          {
+            echo "BACKEND_IMAGE=${{ steps.build.outputs.backend_image }}"
+            echo "FRONTEND_IMAGE=${{ steps.build.outputs.frontend_image }}"
+            echo "COMPOSE_MAINTAINER=${{ env.COMPOSE_PROJECT }}"
+          } >> .env
+          # Everything prefixed STAGING_ becomes a plain key in the stack env.
+          echo "$SECRETS_CONTEXT" | jq -r 'to_entries[] | select(.key|startswith("STAGING_")) | select(.value|contains("\n")|not) | "\(.key|sub("^STAGING_";""))=\(.value)"' >> .env
+          echo "$VARS_CONTEXT"    | jq -r 'to_entries[] | select(.key|startswith("STAGING_")) | "\(.key|sub("^STAGING_";""))=\(.value)"' >> .env
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-stack
+        with:
+          ssh_key: ${{ secrets.STAGING_SSH_KEY }}
+          server_ip: ${{ secrets.STAGING_SERVER_IP }}
+          server_username: ${{ secrets.STAGING_SERVER_USERNAME }}
+          directory: ${{ env.REMOTE_DIR }}
+          compose_project: ${{ env.COMPOSE_PROJECT }}
+          registry: ${{ env.REGISTRY }}
+          actor: ${{ github.actor }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  prerelease:
+    name: Update moving prerelease draft
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate prerelease notes
+        run: |
+          prev=""
+          if git rev-parse -q --verify refs/tags/prerelease-main >/dev/null 2>&1; then
+            prev=$(git rev-list -n 1 prerelease-main)
+          fi
+          if [ -z "$prev" ]; then
+            git log --oneline --no-merges -n 100 > /tmp/notes.txt
+          else
+            git log --oneline --no-merges "${prev}..HEAD" > /tmp/notes.txt
+          fi
+          [ -s /tmp/notes.txt ] || echo "No new changes since the last prerelease draft." > /tmp/notes.txt
+          {
+            echo "## Staging prerelease"
+            echo ""
+            echo "Auto-updated from the latest commit on \`main\` (deployed to staging)."
+            echo ""
+            echo "### Changes since previous draft"
+            sed 's/^/- /' /tmp/notes.txt
+          } > /tmp/notes.md
+
+      - name: Move prerelease tag to current main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f prerelease-main "${GITHUB_SHA}"
+          git push origin refs/tags/prerelease-main --force
+
+      - name: Create or update prerelease draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="Staging prerelease (${GITHUB_SHA:0:8})"
+          if gh release view prerelease-main --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit prerelease-main --repo "${{ github.repository }}" \
+              --title "$title" --notes-file /tmp/notes.md --draft=true --prerelease
+          else
+            gh release create prerelease-main --repo "${{ github.repository }}" \
+              --target "${GITHUB_SHA}" --title "$title" --notes-file /tmp/notes.md --draft --prerelease
+          fi
