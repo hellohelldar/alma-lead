@@ -1,6 +1,6 @@
 """Password hashing and JWT helpers."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
@@ -21,7 +21,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(subject: str, expires_minutes: int | None = None) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=expires_minutes or settings.access_token_expire_minutes
     )
     payload = {"sub": subject, "exp": expire}
